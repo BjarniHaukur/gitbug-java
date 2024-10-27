@@ -23,7 +23,7 @@ from typing import Optional
 class GitBugJavaCli(object):
     """GitBug-Java CLI"""
 
-    def __init__(self, verbose: bool = False):
+    def __init__(self, verbose: bool = True):
         self.__init_logging(verbose)
         self.__projects = {}
 
@@ -51,6 +51,7 @@ class GitBugJavaCli(object):
         client = DockerClient.getInstance()
         # Return if image already exists
         if len(client.images.list(name=runner_image)) > 0:
+            logging.info(f"Base image {runner_image} already exists, skipping setup")
             return
 
         tmp_dir = tempfile.mkdtemp()
@@ -58,15 +59,31 @@ class GitBugJavaCli(object):
         dockerfile_path = Path(tmp_dir, "Dockerfile")
         with dockerfile_path.open("w") as f:
             dockerfile = f"FROM {base_image}\n"
-            # HACK: We set runneradmin to an arbitrarily large uid to avoid conflicts with the host's
+            # HACK: Set user and group configurations to avoid conflicts
             dockerfile += f"RUN sudo usermod -u 4000000 runneradmin\n"
             dockerfile += f"RUN sudo groupadd -o -g {os.getgid()} {grp.getgrgid(os.getgid()).gr_name}\n"
             dockerfile += f"RUN sudo usermod -G {os.getgid()} runner\n"
             dockerfile += f"RUN sudo usermod -o -u {os.getuid()} runner\n"
             f.write(dockerfile)
 
-        client.images.build(path=tmp_dir, tag=runner_image, forcerm=True)
+        # Build the Docker image with real-time feedback
+        logging.info(f"Building Docker image {runner_image}...")
+        try:
+            for line in client.images.build(path=tmp_dir, tag=runner_image, forcerm=True, stream=True, decode=True):
+
+                if "stream" in line:
+                    logging.info(line["stream"].strip())
+                elif "status" in line:
+                    logging.info(line["status"])
+                elif "error" in line:
+                    logging.error(f"Error encountered: {line['error']}")
+                    break
+        except Exception as e:
+            logging.error(f"Build failed with exception: {str(e)}")
+
+        # Clean up temporary files
         shutil.rmtree(tmp_dir, ignore_errors=True)
+        logging.info("Base image setup complete")
 
     def __download(self, url: str, filename: str):
         with open(filename, "wb") as f:
