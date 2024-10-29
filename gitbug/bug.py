@@ -192,9 +192,13 @@ class Bug(object):
             logging.debug(f"Executing GitHub Actions for {self.bid}")
             shutil.rmtree(Path(workdir, ".act-result"), ignore_errors=True)
             runs = executor.run_tests(
-                keep_containers=False, offline=True, timeout=timeout
+                keep_containers=False, offline=True, timeout=timeout  # False
             )
             docker_client.images.remove(runner_image, force=True)
+        except Exception as e:
+            print(e)
+            logging.error(f"Error running {self.bid}: {e}")
+            raise e
         finally:
             shutil.rmtree(Path(workdir, ".act-result"), ignore_errors=True)
             if acquire_act_cache:
