@@ -8,7 +8,7 @@ GitBug-Java is a reproducible Java benchmark of recent bugs.
 
 Requirements:
 - Python (Recommended 3.11)
-- Poetry (Recommended 1.8 and higher)
+- uv (Recommended 0.1 and higher)
 - Docker (v20 or higher)
 - If you are on Ubuntu/Debian, choose a system with GLIBC 2.32 or 2.34 as some of the dependencies require these versions (A docker image would not be suitable as it would require DinD). 
 
@@ -28,54 +28,53 @@ Once the above requirements are satisfied within your system or the VM machine i
 
 1. Setup Python environment
     ```bash
-    poetry shell
-    poetry install --no-root
+    uv sync
     ```
 
-    **Note:** Poetry shell will attempt to create a new virtual environment. 
-    However, if you are already inside a virtual environment, poetry will use the that environment.
+    **Note:** uv venv will create a new virtual environment. 
+    However, if you are already inside a virtual environment, uv will use that environment.
     In such case, the subsequent commands would only work with a Python3.11 environment.
 
-2. Add GitBug-Java and custom Act version to path
+2. Add custom Act version to path
     ```bash
-    export PATH="$(pwd):$(pwd)/bin:$PATH"
+    export PATH="$(pwd)/bin:$PATH"
     ```
     **Note:** The above command needs to be executed on every new shell instance
     
 3. Run Setup (Installs Docker Image ~50GiB, downloads required dependencies ~80GiB). The downloadable data size is around 130GB. However, after unzipping files, the space taken goes up to 240GB (it goes down after deleting the zipped files).
     ```bash
-    gitbug-java setup
+    uv run gitbug_java.py setup
     ```
 
-**NOTE: Ensure that all `gitbug-java` commands are executed without using `sudo` to guarantee correct functionality.**
+**NOTE: Ensure that all commands are executed without using `sudo` to guarantee correct functionality.**
 
 ## Use GitBug-Java
 
 1. List all available project ids
 ```bash
-gitbug-java pids
+uv run gitbug_java.py pids
 ```
 
 2. List all available bug ids
 ```bash
-gitbug-java bids [-p=PID]
+uv run gitbug_java.py bids [-p=PID]
 ```
 
 3. Checkout bug-fix
 ```bash
-gitbug-java checkout BID WORK_DIR [--fixed]
+uv run gitbug_java.py checkout BID WORK_DIR [--fixed]
 ```
 
 4. Run Actions
 ```bash
-gitbug-java run WORKDIR [--act_cache_dir=ACT_CACHE_DIR | --timeout=TIMEOUT]
+uv run gitbug_java.py run WORKDIR [--act_cache_dir=ACT_CACHE_DIR | --timeout=TIMEOUT]
 ```
 
 A verbose mode is also available with the option `-v` or `--verbose`.
 
 ## Obtain parsed test execution results
 
-The parsed test execution results are stored, after executing the `gitbug-java run` command, under `${WORKDIR}/.gitbug-java/test-results.json`
+The parsed test execution results are stored, after executing the `run` command, under `${WORKDIR}/.gitbug-java/test-results.json`
 The file includes the following information:
 ```json
 {
