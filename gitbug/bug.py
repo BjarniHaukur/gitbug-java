@@ -192,7 +192,7 @@ class Bug(object):
             logging.debug(f"Executing GitHub Actions for {self.bid}")
             shutil.rmtree(Path(workdir, ".act-result"), ignore_errors=True)
             runs = executor.run_tests(
-                keep_containers=False, offline=True, timeout=timeout  # False
+                keep_containers=True, offline=True, timeout=timeout  # Does keep containers make subsequent calls faster?
             )
             docker_client.images.remove(runner_image, force=True)
         except Exception as e:
